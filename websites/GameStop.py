@@ -4,6 +4,8 @@ from pathlib import Path
 import re
 import json
 
+from requests.models import RequestField
+
 
 if __name__ != '__main__':
     from websites.C import C
@@ -98,7 +100,8 @@ class GameStop:
         for tag in tags_contain_article:
             article = article + '\n' + tag.get_text(separator='\n', strip=True)
         
-        output_path =GameStop.output_path / pub_date / f'{title_prefix}….txt'
+        #write in article
+        output_path = GameStop.output_path / pub_date / f'{title_prefix}….txt'
         try:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(article, encoding='utf-8')
@@ -134,4 +137,12 @@ class GameStop:
 
 if __name__ == '__main__':
     dict = {"This Ghost Story Musical Is Packed With Personality And A Fright-Filled Mystery": "https://www.gamespot.com/articles/this-ghost-story-musical-is-packed-with-personality-and-a-fright-filled-mystery/1100-6534108/"}
+
+    GameStop.get_write_body()
+
+    response = requests.get(GameStop.url, headers=GameStop.headers)
+    print(response)
+
+    response = requests.get('https://www.gamespot.com/games/xbox-series-x', headers=GameStop.headers)
+    print(response)
     pass

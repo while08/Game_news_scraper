@@ -35,7 +35,7 @@ class WindowsCentral:
         body = soup.body
         
         WindowsCentral.body_html_path.write_text(body.prettify(), encoding = 'utf-8')#type: ignore
-        print(C.YELLOW('[Win]Windows Central body html has been writen.'))
+        print(C.YELLOW('[Win]Body html has been writen.'))
         return
 
 
@@ -67,7 +67,7 @@ class WindowsCentral:
             
             #write in new title_url_dict
             f.seek(0)
-            for title_url_dict in result_list[-25:]:
+            for title_url_dict in result_list[:20]:
                 json.dump(title_url_dict, f, ensure_ascii = False)
                 f.write('\n')
             f.truncate()
@@ -135,4 +135,5 @@ class WindowsCentral:
 
 
 if __name__ == '__main__':
+    WindowsCentral.get_article_url()
     pass

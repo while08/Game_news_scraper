@@ -1,6 +1,10 @@
 from pathlib import Path
 import json
+import requests
 
+#translate()
+from hashlib import md5
+import random
 
 #local utils
 from websites.C import C
@@ -9,6 +13,7 @@ from websites.AlineaAnalytics import AlineaAnalytics
 from websites.Mp1st import Mp1st
 from websites.VGC import VGC
 from websites.GameStop import GameStop
+from websites.TheVerge import TheVerge
 
 #type hints
 from abc import ABC
@@ -21,6 +26,7 @@ class WebSiteAbc(ABC):#abc for websiteOperate class
     #show_articles()
     article_url_path: ClassVar[Path]
     show_amount: ClassVar[int]
+    alias: ClassVar[str]
 
 
 
@@ -30,6 +36,7 @@ class ClassProtocol(Protocol):#solve cross-parent class dependency problem
     get_article_url: ClassVar
     article_url_path: ClassVar
     show_amount: ClassVar
+    alias: ClassVar
 
     #output_article()
     get_write_body: ClassVar
@@ -78,7 +85,7 @@ class Basic(ClassProtocol):
                     dict['class'] = cls
                     title_url_list.append(dict)
         except Exception as e:
-            print(C.RED(f'[!{cls}]Raise error while reading article url: {e}'))
+            print(C.RED(f'[!{cls.alias}]Raise error while reading article url: {e}'))
             return
             
         #cut and write title_hrep_list to Basic attribute
@@ -98,7 +105,7 @@ class Basic(ClassProtocol):
         download picture to ArticleOutput/website_name/datetime/article_title/..."""
         
         try:    #get target article url
-            target_url = Basic.current_article_list[idx - 1]
+            target_url = Basic.current_article_list[idx-1]
         except IndexError:
             print(C.RED('[!]Index not found.'))
             return False
@@ -108,20 +115,60 @@ class Basic(ClassProtocol):
 
 
 
+    @classmethod
+    def translate(cls, idx: int):
+        
+        trans_api = 'https://fanyi-api.baidu.com/api/trans/vip/translate'
+        appid = '20250822002436409'
+        try:
+            q = next(iter(Basic.current_article_list[idx-1]))
+        except IndexError:
+            print(C.RED('[!]Index not found.'))
+            return False
+        salt = random.randint(32768, 65536)
+        key = 'Gef7sZTzRNdAnxMkhfso'
+        sign_str = appid + q + str(salt) + key
+        sign = md5(sign_str.encode(encoding='utf-8')).hexdigest()
+        params = {'q': q, 'from': 'en', 'to': 'zh', 'appid': appid, 'salt': salt, 'sign': sign, 'needIntervene': 1}
+        
+        print(C.YELLOW('[log]Getting translate response...'))
+        trans_response = requests.get(trans_api, params=params)
+        response_json = json.loads(trans_response.text)
+        
+        try:
+            dst = response_json['trans_result'][0]['dst']
+            print(C.GREEN(f'[{idx}-Trans]') + dst)
+        except (KeyError, IndexError):
+            err_code = response_json['error_code']
+            err_msg = response_json['error_msg']
+            print(C.RED(f'[!Trans]Error code: {err_code}, error message: {err_msg}'))
+        
+
+
+
 class WinCentOp(WebSiteAbc, WindowsCentral, Basic):
+    alias = 'Win'
     show_amount = 10
 
 class AAOp(WebSiteAbc, AlineaAnalytics, Basic):
+    alias = 'AA'
     show_amount = 5
 
 class Mp1Op(WebSiteAbc, Mp1st, Basic):
+    alias = 'Mp1'
     show_amount = 10
 
 class VGCOp(WebSiteAbc, VGC, Basic):
+    alias = 'VGC'
     show_amount = 7
 
 class GSOp(WebSiteAbc, GameStop, Basic):
+    alias = 'GS'
     show_amount = 10
+
+class VergOp(WebSiteAbc, TheVerge, Basic):
+    alias = 'Veg'
+    show_amount = 7
     
 
 
@@ -130,6 +177,10 @@ class CommandLineInterface(Basic):
     pass
 
 if __name__ == '__main__':
+    VergOp.show_articles()
+    VergOp.translate(2)
+    VergOp.output_article(4)
+    VergOp.output_article(7)
     pass
 
 

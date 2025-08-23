@@ -48,7 +48,7 @@ class VGC:
     def get_article_url(cls):
         
         #get target <article> that contains article url
-        body_html =VGC.body_html_path.read_text(encoding='utf-8')
+        body_html = VGC.body_html_path.read_text(encoding='utf-8')
         body = BeautifulSoup(body_html, 'html.parser')
         target_tags = body.find_all('a', title=True)
         
@@ -112,10 +112,20 @@ class VGC:
         try:
             figure_tag = article_tag.find('figure', class_='post__featured-image')#type: ignore
             figure_img_srcset = img_url_head + figure_tag.find('img')['srcset']#type: ignore
-            figure_img_url = re.search(r'768w, (.*\.jpg) 1024w', figure_img_srcset)
+            figure_img_url = re.search(r'480w, (.+) 768w', figure_img_srcset)
             figure_img_url = img_url_head + figure_img_url.group(1)#type: ignore
             img_url_list.append(figure_img_url)
-        except Exception: pass
+        except Exception as e: print(e)
+        
+        figure_tags = content_div.find_all('figure', recursive=False)#type: ignore
+        if figure_tags != []:
+            for figure in figure_tags:
+                try:
+                    img_url = figure.find('img')['data-srcset']#type: ignore
+                    img_url = re.search(r'480w, (.+) 768w', img_url)#type: ignore
+                    img_url = img_url_head + img_url.group(1)#type: ignore
+                    img_url_list.append(img_url)
+                except Exception: continue
         
         for i, img_url in enumerate(img_url_list):
             try:
@@ -135,5 +145,5 @@ class VGC:
 
 if __name__ == '__main__':
     t_u_list = {"Xbox is reporting \u2018major outages\u2019 in certain online multiplayer features": "https://www.videogameschronicle.com/news/xbox-is-reporting-major-outages-in-certain-online-multiplayer-features/"}
-    VGC.cls_output_article(t_u_list)
+    VGC.get_write_body()
     pass
