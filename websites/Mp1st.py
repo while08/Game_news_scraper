@@ -38,13 +38,13 @@ class Mp1st:
     @classmethod
     def get_write_body(cls):
         
-        print(C.YELLOW('[Mp1]Getting response...'))
+        print(C.YELLOW('[Mp1]Getting body html...'), end='', flush=True)
         
         response = requests.post(Mp1st.api_url, headers=Mp1st.headers, data=Mp1st.data)
         soup = BeautifulSoup(response.text, 'html.parser')#type: ignore
         
         Mp1st.body_html_path.write_text(soup.prettify(), encoding = 'utf-8')#type: ignore
-        print(C.YELLOW('[Mp1]Body html has been writen.'))
+        print(C.YELLOW(' Complete.'))
 
 
     @classmethod
@@ -57,7 +57,7 @@ class Mp1st:
         f = open(str(Mp1st.article_url_path), 'w', encoding='utf-8')
         
         #write into local 
-        print(C.YELLOW('[Mp1]Writing article url...'))
+        print(C.YELLOW('[Mp1]Writing article url...'), end='', flush=True)
         for tag in tags_contain_url:
             try:
                 title = tag.get_text(strip=True)
@@ -65,15 +65,15 @@ class Mp1st:
                 json.dump({title: article_url}, f)
                 f.write('\n')
             except Exception as e:
-                print(C.RED(f'[!Mp1]Raise error: {e}'))
+                print(C.RED(f'\n[!Mp1]Raise error: {e}'))
                 continue
         f.close()
-        print(C.YELLOW('[Mp1]Complete.'))
+        print(C.YELLOW(' Complete.'))
 
 
     @classmethod
     def cls_output_article(cls, title_url_dict: dict[str, str]):
-        print(C.YELLOW('[Mp1]Getting and processing article response...'))
+        print(C.YELLOW('[Mp1]Getting reaponse and writing article...'), end='', flush=True)
         
         #get info and <article> tag
         url = next(iter(title_url_dict.values()))
@@ -89,20 +89,19 @@ class Mp1st:
         pub_date = article_tag.find('div', class_=re.compile(r'.*single-author-meta')).text#type: ignore
         pub_date = re.sub(r'\n', ' ', pub_date)
         pub_date = re.sub(r'(.*?)([A-z][a-z]+)(\s)(\d+)(,\s\d\d\d\d.*)', r'\2.\4', pub_date)
-        title = next(iter(title_url_dict))
-        title_prefix = title[:35]
         
         #process and get article, write to local
         single_content_tag = article_tag.find('div', class_=re.compile(r'.*?single-content'))#type: ignore
         result_article = title + '\n' + single_content_tag.get_text(separator='\n', strip=True)#type: ignore
+        result_article = result_article + '\n\n---Published by Mp1st'
         
         output_path = Mp1st.output_path / pub_date / f'{title_prefix}.txt'
         try:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(result_article, encoding='utf-8')
-            print(C.YELLOW('[Mp1]Article has been written.'))
+            print(C.YELLOW('Complete, getting images...'))
         except Exception as e:
-            print(C.RED(f'[!Mp1]Raise error while writing article: {e}'))
+            print(C.RED(f'\n[!Mp1]Raise error while writing article: {e}'))
             return False
         
         #download images to local
@@ -127,13 +126,9 @@ class Mp1st:
                 print(C.RED(f'[!Mp1]Failur to download {i+1}image: {e}'))
                 continue
         
-        
+        return result_article
 
 
 if __name__ == '__main__':
-
-
-
-
     title_url_dict = {"Battlefield 2042 Gets New Update Version 1.74/1.000.077 That Adds New Content, Just in Time as BF6 Beta Ends": "https://mp1st.com/news/battlefield-2042-new-update-1-74-1-000-077-new-content"}
 

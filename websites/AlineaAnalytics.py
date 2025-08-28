@@ -29,14 +29,14 @@ class AlineaAnalytics:
     @classmethod
     def get_write_body(cls):
         
-        print(C.YELLOW('[AA]Getting response...'))
+        print(C.YELLOW('[AA]Getting body html...'), end='', flush=True)
         
         response = requests.get(AlineaAnalytics.url, headers=AlineaAnalytics.headers)
         response.encoding = 'utf-8'
         body = BeautifulSoup(response.text, 'html.parser').body
 
         AlineaAnalytics.body_html_path.write_text(body.prettify(), encoding='utf-8')#type: ignore
-        print(C.YELLOW('[AA]Body html has been writen.'))
+        print(C.YELLOW(' Complete.'))
 
 
     @classmethod
@@ -53,7 +53,8 @@ class AlineaAnalytics:
         
         f = open(AlineaAnalytics.article_url_path, 'w', encoding='utf-8')
         
-        print(C.YELLOW('[AA]Writing article url...'))
+        print(C.YELLOW('[AA]Writing article url...'), end='',flush=True)
+        _s = ' '
         for div in divs_contain_url[:7]:
             try:
                 pub_date = div.span.text.strip()#type: ignore
@@ -66,14 +67,15 @@ class AlineaAnalytics:
                 json.dump(title_url_dict, f)
                 f.write('\n')
             except Exception as e:
-                print(C.RED(f'[!AA]Raise error: {e}'))
+                print(C.RED(f'\n[!AA]Raise error: {e}'))
+                _s = '[AA]'
         f.close()
-        print(C.YELLOW('[AA]Complete.'))
+        print(C.YELLOW(f'{_s}Complete.'))
 
 
     @classmethod
     def cls_output_article(cls, title_url_dict: dict[str, str]):
-        print(C.YELLOW('[AA]Getting and processing article response...'))
+        print(C.YELLOW('[AA]Getting reaponse and writing article...'), end='', flush=True)
         
         url = next(iter(title_url_dict.values()))
         original_title = next(iter(title_url_dict.keys()))
@@ -95,14 +97,15 @@ class AlineaAnalytics:
         for tag in tags_contain_article[:-1]:
             result_article = result_article + tag.text + '\n'
         result_article = re.sub(r'\n\n+\n', r'\n\n', result_article)
+        result_article = result_article + '\n---Published by Alinea Analytics'
         
         output_path = AlineaAnalytics.output_path / pub_date / f'{title_prefix}….txt'
         try:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(result_article, encoding='utf-8')
-            print(C.YELLOW('[AA]Article has been writen.'))
+            print(C.YELLOW('Complete, getting images...'))
         except Exception as e:
-            print(C.RED(f'[!AA]Raise error while writing article: {e}'))
+            print(C.RED(f'\n[!AA]Raise error while writing article: {e}'))
             return False
         
         
@@ -124,6 +127,8 @@ class AlineaAnalytics:
             except Exception as e:
                 print(C.RED(f'[!AA]Failur to download {i+1}image: {e}'))
                 continue
+        
+        return result_article
 
 
 

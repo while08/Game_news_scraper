@@ -28,7 +28,7 @@ class VGC:
     @classmethod
     def get_write_body(cls):
         
-        print(C.YELLOW('[VGC]Getting response...'))
+        print(C.YELLOW('[VGC]Getting body html...'), end='', flush=True)
         
         try:
             response = requests.get(VGC.url, headers=VGC.headers)
@@ -38,10 +38,10 @@ class VGC:
             
             VGC.body_html_path.write_text(body.prettify(), encoding='utf-8')#type: ignore
         except Exception as e:
-            print(C.RED(f'[!VGC]Raise error while finding tag <div>: {e}'))
+            print(C.RED(f'\n[!VGC]Raise error while finding tag <div>: {e}'))
             return False
             
-        print(C.YELLOW('[VGC]Body html has been writen.'))
+        print(C.YELLOW(' Complete.'))
 
 
     @classmethod
@@ -54,22 +54,22 @@ class VGC:
         
         f = open(VGC.article_url_path, 'w', encoding='utf-8')
         
-        print(C.YELLOW('[VGC]Writing article url...'))
+        print(C.YELLOW('[VGC]Writing article url...'), end='', flush=True)
         for a in target_tags:
             try:
                 title_url_dict = {a['title'].strip(): a['href']}#type: ignore
                 json.dump(title_url_dict, f)
                 f.write('\n')
             except Exception as e:
-                print(C.RED(f'[!VGC]Raise error: {e}'))
+                print(C.RED(f'\n[!VGC]Raise error: {e}'))
                 
         f.close()
-        print(C.YELLOW('[VGC]Complete.'))
+        print(C.YELLOW(' Complete.'))
 
 
     @classmethod
     def cls_output_article(cls, title_url_dict: dict[str, str]):
-        print(C.YELLOW('[VGC]Getting and processing article response...'))
+        print(C.YELLOW('[VGC]Getting reaponse and writing article...'), end='', flush=True)
         
         url = next(iter(title_url_dict.values()))
         title = next(iter(title_url_dict))
@@ -93,14 +93,15 @@ class VGC:
         content_tags = content_div.find_all(re.compile(r'(?:p|h\d|ul|blockquote)'), recursive=False)#type: ignore
         for tag in content_tags:
             article = article + '\n' + tag.get_text(separator='\n', strip=True)
+        article = article + '\n\n---Published by VGC'
         
         output_path =VGC.output_path / pub_date / f'{title_prefix}….txt'
         try:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(article, encoding='utf-8')
-            print(C.YELLOW('[VGC]Article has been writen.'))
+            print(C.YELLOW('Complete, getting images...'))
         except Exception as e:
-            print(C.RED(f'[!VGC]Raise error while writing article: {e}'))
+            print(C.RED(f'\n[!VGC]Raise error while writing article: {e}'))
             return False
         
         #get and download images to local
@@ -115,7 +116,7 @@ class VGC:
             figure_img_url = re.search(r'480w, (.+) 768w', figure_img_srcset)
             figure_img_url = img_url_head + figure_img_url.group(1)#type: ignore
             img_url_list.append(figure_img_url)
-        except Exception as e: print(e)
+        except Exception as e: print(C.RED(f'[!VGC]Thumb nail error: {e}'))
         
         figure_tags = content_div.find_all('figure', recursive=False)#type: ignore
         if figure_tags != []:
@@ -125,20 +126,20 @@ class VGC:
                     img_url = re.search(r'480w, (.+) 768w', img_url)#type: ignore
                     img_url = img_url_head + img_url.group(1)#type: ignore
                     img_url_list.append(img_url)
-                except Exception: continue
+                except Exception as e: print(C.RED(f'[!VGC]Image error: {e}'))
         
         for i, img_url in enumerate(img_url_list):
             try:
                 image_response = requests.get(img_url, headers=VGC.headers, stream=True)#type: ignore
                 with open(str(img_path / f'[{i+1}]-{title_prefix}….png'), 'wb') as f:
                     for chunk in image_response.iter_content(2200): f.write(chunk)
-                print(C.YELLOW(f'[Mp1]Picture {i+1} writen.'))
+                print(C.YELLOW(f'[VGC]Picture {i+1} writen.'))
                 
             except Exception as e:
-                print(C.RED(f'[!Mp1]Failur to download {i+1}image: {e}'))
+                print(C.RED(f'[!VGC]Failur to download {i+1}image: {e}'))
                 continue
         
-        
+        return article
 
 
 

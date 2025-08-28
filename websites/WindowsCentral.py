@@ -28,21 +28,20 @@ class WindowsCentral:
 
     @classmethod
     def get_write_body(cls):
-        print(C.YELLOW('[Win]Getting response...'))
+        print(C.YELLOW('[Win]Getting body html...'), end='', flush=True)
         
         response = requests.get(WindowsCentral.url, headers = WindowsCentral.headers)
         soup = BeautifulSoup(response.text, 'html.parser')
         body = soup.body
         
         WindowsCentral.body_html_path.write_text(body.prettify(), encoding = 'utf-8')#type: ignore
-        print(C.YELLOW('[Win]Body html has been writen.'))
-        return
+        print(C.YELLOW(' Complete.'))
 
 
 
     @classmethod
     def get_article_url(cls):
-        print(C.YELLOW('[Win]Processing body html...'))
+        print(C.YELLOW('[Win]Writing artile url...'), end='', flush=True)
         
         #get new url list from local body file
         with open(str(WindowsCentral.body_html_path), 'r', encoding = 'utf-8') as f:
@@ -72,13 +71,13 @@ class WindowsCentral:
                 f.write('\n')
             f.truncate()
             
-            print(C.YELLOW('[Win]Article url and title has been writen.'))
+            print(C.YELLOW(' Complete.'))
 
 
 
     @classmethod
     def cls_output_article(cls, title_url_dict: dict[str, str]):
-        print(C.YELLOW('[Win]Getting and processing article response...'))
+        print(C.YELLOW('[Win]Getting reaponse and writing article...'), end='', flush=True)
         url = next(iter(title_url_dict.values()))
         title_prefix = next(iter(title_url_dict.keys()))[:14]
         
@@ -102,6 +101,7 @@ class WindowsCentral:
         processed_article = re.sub('\n', ' ', article)
         processed_article = re.sub(r'\s\s*\s', ' ', processed_article)
         processed_article = re.sub(r'(\.)([ "]*?[A-Z])', r'\1\n\2', processed_article)
+        processed_article = processed_article + '\n\nublished by Windows Central'
         #generate direction with date and write in artile
         output_path = WindowsCentral.output_path / pub_date
         output_path.mkdir(parents = True, exist_ok = True)
@@ -109,14 +109,13 @@ class WindowsCentral:
         (output_path / f'{title_prefix}.txt').touch()
         (output_path / f'{title_prefix}.txt').write_text(processed_article, encoding = 'utf-8')
         
-        print(C.YELLOW(f'[Win]Article "{title_prefix}.txt" has created.'))
+        print(C.YELLOW(' Complete, getting images...'))
         
         
-        #get and download article picture
+        #get and download article image
         picture_path = (output_path / f'{title_prefix}')
         picture_path.mkdir(parents = True, exist_ok = True)
         
-        print(C.YELLOW('[Win]Searching for picture url.'))
         tags_cantain_picture = body.find_all(lambda tag: tag.find('figcaption', recursive = False))#type: ignore
         for i, tag in enumerate(tags_cantain_picture):
             try:
@@ -124,11 +123,13 @@ class WindowsCentral:
                 picture_response = requests.get(picture_url, stream = True)#type: ignore
                 with open(str(picture_path / f'{i+1}-{title_prefix}.png'), 'wb') as f:
                     for chunk in picture_response.iter_content(2200): f.write(chunk)
-                print(C.YELLOW(f'[Win]Picture {i+1} writen.'))
+                print(C.YELLOW(f'[Win]Image {i+1} writen.'))
             
             except Exception as e:
-                print(C.RED(f'[!Win]Failur to download {i+1} picture: {e}'))
+                print(C.RED(f'[!Win]Failur to download {i+1} image: {e}'))
                 continue
+        
+        return processed_article
 
 
 

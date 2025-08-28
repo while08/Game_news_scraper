@@ -27,7 +27,7 @@ class TheVerge:
 
     @classmethod
     def get_write_body(cls):
-        print(C.YELLOW('[Veg]Getting response...'))
+        print(C.YELLOW('[Veg]Getting body html...'), end='', flush=True)
         
         response = requests.get(TheVerge.url, headers=TheVerge.headers)
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -44,7 +44,7 @@ class TheVerge:
                    .find_all('div', recursive=False)[0]#type: ignore
                    .find_all('div', recursive=False)[0])#type: ignore
         except Exception as e:
-            print(C.RED(f'[!Veg]Faild to get first 2 article urls: {e}'))
+            print(C.RED(f'\n[!Veg]Faild to get first 2 article urls: {e}'))
             body1 = BeautifulSoup('<div></div>')
         
         try:
@@ -61,14 +61,14 @@ class TheVerge:
                    .find_all('div', recursive=False)[1]#type: ignore
                    .div)#type: ignore
         except Exception as e:
-            print(C.RED(f'[!Veg]Path of target div tag might be changed, please check: {e}'))
+            print(C.RED(f'\n[!Veg]Path of target div tag might be changed, please check: {e}'))
             return False
         
         for useless_tag in body2.find_all('div', attrs={'data-concert-ads-name': True}, recursive=False): useless_tag.extract()#type: ignore
         
         body_html = body1.prettify() + '<!--SEP-->\n' + body2.prettify()#type: ignore
         TheVerge.body_html_path.write_text(body_html, encoding='utf-8')#type: ignore
-        print(C.YELLOW('[Veg]Body html has been writen.'))
+        print(C.YELLOW(' Complete.'))
 
 
     @classmethod
@@ -103,11 +103,11 @@ class TheVerge:
                 result_list.append(title_url_dict)
             
             except Exception as e:
-                print(C.RED(f'[!Veg]Raise error: {e}'))
+                print(C.RED(f'[!Veg]Url error: {e}'))
                 continue
         
         #write in title_url_dict
-        print(C.YELLOW('[Veg]Writing article url...'))
+        print(C.YELLOW('[Veg]Writing article url...'), end='', flush=True)
         f = open(str(TheVerge.article_url_path), 'w', encoding='utf-8')
         
         for title_url_dict in result_list:#type: ignore
@@ -116,15 +116,15 @@ class TheVerge:
                 f.write('\n')
                 
             except Exception as e:
-                print(C.RED(f'[!Veg]Raise error: {e}'))
+                print(C.RED(f'\n[!Veg]Raise error: {e}'))
                 continue
         f.close()
-        print(C.YELLOW('[Veg]Complete.'))
+        print(C.YELLOW(' Complete.'))
 
 
     @classmethod
     def cls_output_article(cls, title_url_dict: dict[str, str]):
-        print(C.YELLOW('[Veg]Getting and processing article response...'))
+        print(C.YELLOW('[Veg]Getting reaponse and writing article...'), end='', flush=True)
         
         url = next(iter(title_url_dict.values()))
         title = next(iter(title_url_dict))
@@ -140,7 +140,7 @@ class TheVerge:
             pub_date = article_tag.div.find('time')['datetime']#type: ignore
             pub_date = re.sub(r'(\d{4}-)(\d\d)(-)(\d\d)(.*)', r'\2.\4', pub_date)#type: ignore
         except Exception as e:
-            print(C.RED(f'[!Veg]Raise error while getting publish date: {e}'))
+            print(C.RED(f'\n[!Veg]Raise error while getting publish date: {e}'))
             return False
         
         #title of article
@@ -165,15 +165,16 @@ class TheVerge:
             
             para = tag.get_text(separator=' ', strip=True) + '\n'
             article = article + para
+        article = article + '---\nPublished by The Verge'
         
         #write in article
-        output_path =TheVerge.output_path / pub_date / f'{title_prefix}….txt'
+        output_path = TheVerge.output_path / pub_date / f'{title_prefix}….txt'
         try:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(article, encoding='utf-8')
-            print(C.YELLOW('[Veg]Article has been writen.'))
+            print(C.YELLOW('Complete, getting images...'))
         except Exception as e:
-            print(C.RED(f'[!Veg]Raise error while writing article: {e}'))
+            print(C.RED(f'\n[!Veg]Raise error while writing article: {e}'))
             return False
         
         #get images url
@@ -202,11 +203,13 @@ class TheVerge:
                 image_response = requests.get(img_url, headers=TheVerge.headers, stream=True)#type: ignore
                 with open(str(img_path / f'[{i+1}]-{title_prefix}….png'), 'wb') as f:
                     for chunk in image_response.iter_content(2200): f.write(chunk)
-                print(C.YELLOW(f'[Veg]Picture {i+1} writen.'))
+                print(C.YELLOW(f'[Veg]Image {i+1} writen.'))
             
             except Exception as e:
                 print(C.RED(f'[!Veg]Failur to download {i+1}image: {e}'))
                 continue
+        
+        return article
 
 
 
@@ -215,4 +218,3 @@ if __name__ == '__main__':
     d = {"2025 is turning into a good year for long-awaited games": "https://www.theverge.com/games/763698/delayed-games-silksong-metroid-prime-4-2025"}
     d2 = {"Microsoft\u2019s Xbox handheld is a good first step toward a Windows gaming OS": "https://www.theverge.com/notepad-microsoft-newsletter/763357/microsoft-asus-xbox-ally-handheld-hands-on-notepad"}
 
-    TheVerge.cls_output_article(d2)
