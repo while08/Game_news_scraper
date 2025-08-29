@@ -86,6 +86,6 @@ class DeepSeek:
             
             else:
                 history.write_text(result)
-                print(C.BLUE('[!DeepSeek]Invalid response format, original response data writen.'))
+                print(C.BLUE('[!DeepSeek]') + 'Invalid response format, original response data writen.')
 
 
