@@ -58,7 +58,7 @@ class _EuroGamer:
                 pub_date = article_tag.select_one('article time')['datetime']#type: ignore
                 pub_date = re.sub(r'(\d{4}-)(\d\d)(-)(\d\d)(.*)', r'\2.\4', pub_date)#type: ignore
                 
-                result_list.append({f'[{pub_date}]{title}': url})
+                result_list.append({f'[{pub_date}] {title}': url})
                 if len(result_list) >= 20: break
             except Exception: continue
         
@@ -79,7 +79,7 @@ class _EuroGamer:
         #get info
         url = next(iter(title_url_dict.values()))
         origin_title = next(iter(title_url_dict))
-        title = re.sub(r'(\[.+?\])(.+)', r'\2', origin_title)
+        title = re.sub(r'(\[.+?\] )(.+)', r'\2', origin_title)
         pub_date = re.sub(r'(\[)(.+?)(\].+)', r'\2', origin_title)
         title_prefix = title[:35]
         

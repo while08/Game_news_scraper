@@ -46,19 +46,23 @@ class _VGC:
 
     @classmethod
     def get_article_url(cls):
+        print(C.YELLOW('[VGC]Writing article url...'), end='', flush=True)
         
         #get target <article> that contains article url
         body_html = _VGC.body_html_path.read_text(encoding='utf-8')
         body = BeautifulSoup(body_html, 'html.parser')
-        target_tags = body.find_all('a', title=True)
+        target_tags = body.find_all('article')
         
         f = open(_VGC.article_url_path, 'w', encoding='utf-8')
-        
-        print(C.YELLOW('[VGC]Writing article url...'), end='', flush=True)
-        for a in target_tags:
+        for tag in target_tags:
+            a = tag.find('a', title=True)#type: ignore
             try:
-                title_url_dict = {a['title'].strip(): a['href']}#type: ignore
-                json.dump(title_url_dict, f)
+                title = a['title'].strip()#type: ignore
+                url = a['href']#type: ignore
+                pub_date = tag.find('time')['datetime'].strip()#type: ignore
+                pub_date = re.sub(r'(\d{4}-)(\d\d)(-)(\d\d)(.*)', r'\2.\4', pub_date)#type: ignore
+                
+                json.dump({f'[{pub_date}] {title}': url}, f)
                 f.write('\n')
             except Exception as e:
                 print(C.RED(f'\n[!VGC]Raise error: {e}'))
@@ -71,17 +75,17 @@ class _VGC:
     def cls_output_article(cls, title_url_dict: dict[str, str]):
         print(C.YELLOW('[VGC]Getting reaponse and writing article...'), end='', flush=True)
         
+        #get info
         url = next(iter(title_url_dict.values()))
-        title = next(iter(title_url_dict))
+        origin_title = next(iter(title_url_dict))
+        title = re.sub(r'(\[.+?\] )(.+)', r'\2', origin_title)
+        pub_date = re.sub(r'(\[)(.+?)(\].+)', r'\2', origin_title)
         title_prefix = title[:35]
         
         #get publish date and tags that contain article text
         response = requests.get(url, headers=_VGC.headers)
         response.encoding = 'utf-8'
         soup = BeautifulSoup(response.text, 'html.parser')
-        
-        pub_date = soup.head.find('meta', property='article:published_time', content=True)#type: ignore
-        pub_date = re.sub(r'(\d{4}-)(\d+)(-)(\d+)([A-Z].*)', r'\2.\4', pub_date['content'])#type: ignore
         
         #get and write article to local
         article_tag = soup.find('article')
@@ -93,7 +97,7 @@ class _VGC:
         content_tags = content_div.find_all(re.compile(r'(?:p|h\d|ul|blockquote)'), recursive=False)#type: ignore
         for tag in content_tags:
             article = article + '\n' + tag.get_text(separator='\n', strip=True)
-        article = article + '\n\n---Published by VGC'
+        article = article + '\n\n——Published by VGC'
         
         output_path =_VGC.output_path / pub_date / f'{title_prefix}….txt'
         try:
@@ -145,6 +149,6 @@ class _VGC:
 
 
 if __name__ == '__main__':
-    t_u_list = {"Xbox is reporting \u2018major outages\u2019 in certain online multiplayer features": "https://www.videogameschronicle.com/news/xbox-is-reporting-major-outages-in-certain-online-multiplayer-features/"}
-    _VGC.get_write_body()
+    t_u_list = {"[09.12] Xbox is reporting \u2018major outages\u2019 in certain online multiplayer features": "https://www.videogameschronicle.com/news/xbox-is-reporting-major-outages-in-certain-online-multiplayer-features/"}
+    _VGC.cls_output_article(t_u_list)
     pass

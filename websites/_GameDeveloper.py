@@ -69,6 +69,10 @@ class _GameDeveloper:
     def get_article_url(cls):
         with open(str(_GameDeveloper.body_html_path), 'r', encoding='utf-8') as f:
             list_contians_url = json.load(f)
+        months = {
+            'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4,
+            'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8,
+            'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
         
         result_list = []
         for ele in list_contians_url:
@@ -77,7 +81,11 @@ class _GameDeveloper:
             data_dict = ele['data']
             title = data_dict['articleName'].strip()
             url = 'https://www.gamedeveloper.com' + data_dict['articleUrl']
-            result_list.append({title: url})
+            pub_date = data_dict['date'].strip()
+            month, day = re.match(r'([A-Za-z]+) (\d+),.*', pub_date).groups()#type: ignore
+            pub_date = f'{months[month]}.{day if len(day) == 2 else '0' + day}'
+            
+            result_list.append({f'[{pub_date}] {title}': url})
             
             if len(result_list) >= 10: break
         
@@ -96,24 +104,16 @@ class _GameDeveloper:
     def cls_output_article(cls, title_url_dict: dict[str, str]):
         print(C.YELLOW('[Dev]Getting reaponse and writing article...'), end='', flush=True)
         
+        #get info
         url = next(iter(title_url_dict.values()))
-        title = next(iter(title_url_dict))
+        origin_title = next(iter(title_url_dict))
+        title = re.sub(r'(\[.+?\] )(.+)', r'\2', origin_title)
+        pub_date = re.sub(r'(\[)(.+?)(\].+)', r'\2', origin_title)
         title_prefix = title[:35]
         
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'}
         response = requests.get(url, headers=headers)
         soup = BeautifulSoup(response.text, 'html.parser')
-        
-        #get publication date
-        try:
-            pub_date = soup.head.find('script')#type: ignore
-            pub_date: dict = json.loads(pub_date.text)#type: ignore
-            pub_date = pub_date['datePublished']#type: ignore
-            pub_date: str = re.sub(r'(\d{4}-)(\d\d)(-)(\d\d)(.*)', r'\2.\4', pub_date)#type: ignore
-        
-        except Exception as e:
-            print(C.RED('[!Dev]') + f'Raise error while getting publication date: {e}')
-            return False
         
         #get tags contain article
         article = title +'\n'

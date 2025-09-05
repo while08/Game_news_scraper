@@ -17,7 +17,7 @@ class DeepSeek:
     history_path.mkdir(parents=True, exist_ok=True)
 
     api_url = 'https://api.deepseek.com/chat/completions'
-    key = '<your key here>'
+    key = ''
 
     payload = {
             'messages': [],

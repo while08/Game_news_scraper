@@ -57,7 +57,10 @@ class _InsiderGaming:
         for tag in url_tags[:25]:
             url = tag.find('loc').text#type: ignore
             title = html.unescape(tag.find('news:title').text)#type: ignore
-            json.dump({title: url}, f)
+            pub_date = tag.find('news:publication_date').get_text(strip=True)#type: ignore
+            pub_date = re.sub(r'(\d{4}-)(\d\d)(-)(\d\d)(.*)', r'\2.\4', pub_date)#type: ignore
+            
+            json.dump({f'[{pub_date}] {title}': url}, f)
             f.write('\n')
         f.close()
         print(C.YELLOW(' Complete.'))
@@ -67,16 +70,15 @@ class _InsiderGaming:
     def cls_output_article(cls, title_url_dict: dict[str, str]):
         print(C.YELLOW('[InG]Getting reaponse and writing article...'), end='', flush=True)
         
-        #get info and <article> tag
+        #get info
         url = next(iter(title_url_dict.values()))
-        title = next(iter(title_url_dict))
+        origin_title = next(iter(title_url_dict))
+        title = re.sub(r'(\[.+?\] )(.+)', r'\2', origin_title)
+        pub_date = re.sub(r'(\[)(.+?)(\].+)', r'\2', origin_title)
         title_prefix = title[:35]
         
         response = requests.get(url, headers=_InsiderGaming.headers)
         article_tag = BeautifulSoup(response.text, 'html.parser').article
-        
-        pub_date = article_tag.find('time')['datetime']#type: ignore
-        pub_date = re.sub(r'(\d{4}-)(\d\d)(-)(\d\d)(.*)', r'\2.\4', pub_date)#type: ignore
         
         #get article
         article = title + '\n'
@@ -137,6 +139,6 @@ class _InsiderGaming:
 
 
 if __name__ == '__main__':
-    d1 = {"Gamescom 2026 Dates, Location, and Ticket Sales\u2014When is Gamescom 2026 Happening?": "https://insider-gaming.com/gamescom-2026-dates-location-and-ticket-sales-when-is-gamescom/"}
+    d1 = {"[9.02] Gamescom 2026 Dates, Location, and Ticket Sales\u2014When is Gamescom 2026 Happening?": "https://insider-gaming.com/gamescom-2026-dates-location-and-ticket-sales-when-is-gamescom/"}
     a = _InsiderGaming.cls_output_article(d1)
     pass

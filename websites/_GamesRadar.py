@@ -50,7 +50,10 @@ class _GamesRadar:
         for tag in divs_contain_url:
             url = tag.a['href']#type: ignore
             title = html.unescape(tag.a['aria-label']).strip()#type: ignore
-            json.dump({title: url}, f)
+            pub_date = tag.select_one('div time')['datetime'].strip()#type: ignore
+            pub_date = re.sub(r'(\d{4}-)(\d\d)(-)(\d\d)(.*)', r'\2.\4', pub_date)#type: ignore
+            
+            json.dump({f'[{pub_date}] {title}': url}, f)
             f.write('\n')
         f.close()
         print(C.YELLOW(' Complete.'))
@@ -60,16 +63,17 @@ class _GamesRadar:
     def cls_output_article(cls, title_url_dict: dict[str, str]):
         print(C.YELLOW('[GR]Getting reaponse and writing article...'), end='', flush=True)
         
-        #get info and <article> tag
+        #get info
         url = next(iter(title_url_dict.values()))
-        title = next(iter(title_url_dict))
+        origin_title = next(iter(title_url_dict))
+        title = re.sub(r'(\[.+?\] )(.+)', r'\2', origin_title)
+        pub_date = re.sub(r'(\[)(.+?)(\].+)', r'\2', origin_title)
         title_prefix = title[:35]
         
         response = requests.get(url, headers=_GamesRadar.headers)
         soup = BeautifulSoup(response.text, 'lxml')
-        pub_date = soup.head.find('meta', {'name': 'pub_date'})['content']#type: ignore
-        pub_date = re.sub(r'(\d{4}-)(\d\d)(-)(\d\d)(.*)', r'\2.\4', pub_date)#type: ignore
         
+        #get article
         target_div = soup.body.find('div', id='article-body')#type: ignore
         tags_contain_article = target_div.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul'], recursive=False)#type: ignore
         
@@ -127,7 +131,7 @@ class _GamesRadar:
 
 
 if __name__ == '__main__':
-    d = {"Gears of War: Reloaded release time \u2013 here's when you can dive into the remastered 2006 shooter on PS5, PC, and Xbox Series X|S": "https://www.gamesradar.com/games/gears-of-war/gears-of-war-reloaded-release-time-heres-when-you-can-dive-into-the-remastered-2006-shooter-on-ps5-pc-and-xbox-series-x-s/"}
+    d = {"[9.02] Gears of War: Reloaded release time \u2013 here's when you can dive into the remastered 2006 shooter on PS5, PC, and Xbox Series X|S": "https://www.gamesradar.com/games/gears-of-war/gears-of-war-reloaded-release-time-heres-when-you-can-dive-into-the-remastered-2006-shooter-on-ps5-pc-and-xbox-series-x-s/"}
 
     _GamesRadar.cls_output_article(d)
     pass

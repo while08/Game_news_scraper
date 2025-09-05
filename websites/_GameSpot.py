@@ -50,11 +50,20 @@ class _GameSpot:
         #process and get article urls
         tags_contain_url = body.find_all('div', class_=re.compile('card-item base-flexbox flexbox-align-center width.*'))
         result_list = []
+        months = {
+            'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4,
+            'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8,
+            'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
+        
         for tag in tags_contain_url:
             a_tag = tag.find('a', href=True, class_=True)#type: ignore
             url = 'https://www.gamespot.com' + a_tag['href']#type: ignore
             title = a_tag.get_text(strip=True)#type: ignore
-            result_list.append({title: url})
+            pub_date = tag.select_one('div time')['datetime'].strip()#type: ignore
+            month, day = re.match(r'.*?, ([A-Za-z]+?) (\d+),.*', pub_date).groups()#type: ignore
+            pub_date = f'{months[month]}.{day if len(day) == 2 else '0' + day}'
+            
+            result_list.append({f'[{pub_date}] {title}': url})
         
         #write in
         print(C.YELLOW('[GS]Writing article url...'), end='', flush=True)
@@ -70,22 +79,17 @@ class _GameSpot:
     def cls_output_article(cls, title_url_dict: dict[str, str]):
         print(C.YELLOW('[GS]Getting reaponse and writing article...'), end='', flush=True)
         
+        #get info
         url = next(iter(title_url_dict.values()))
-        title = next(iter(title_url_dict))
+        origin_title = next(iter(title_url_dict))
+        title = re.sub(r'(\[.+?\] )(.+)', r'\2', origin_title)
+        pub_date = re.sub(r'(\[)(.+?)(\].+)', r'\2', origin_title)
         title_prefix = title[:35]
         
-        #get publish date
+        #get article
         response = requests.get(url, headers=_GameSpot.headers)
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        try:
-            pub_date = soup.find('time', datetime=True)['datetime']#type: ignore
-            pub_date = re.sub(r'(\d{4}-)(\d\d)(-)(\d\d)(.*)', r'\2.\4', pub_date)#type: ignore
-        except Exception as e:
-            print(C.RED(f'\n[!GS]') + f'Raise error while getting publication date: {e}')
-            return False
-        
-        #get article
         try:
             article_head = soup.find('section', class_='news-hdr js-seamless-content__page-header has-rhythm--max')
             article_head = '\n'.join([article_head.h1.text, article_head.p.text, ''])#type: ignore
@@ -138,5 +142,6 @@ class _GameSpot:
 
 
 if __name__ == '__main__':
-    dict = {"This Ghost Story Musical Is Packed With Personality And A Fright-Filled Mystery": "https://www.gamespot.com/articles/this-ghost-story-musical-is-packed-with-personality-and-a-fright-filled-mystery/1100-6534108/"}
+    d = {"This Ghost Story Musical Is Packed With Personality And A Fright-Filled Mystery": "https://www.gamespot.com/articles/this-ghost-story-musical-is-packed-with-personality-and-a-fright-filled-mystery/1100-6534108/"}
+    _GameSpot.cls_output_article(d)
     pass

@@ -73,6 +73,7 @@ class _TheVerge:
 
     @classmethod
     def get_article_url(cls):
+        print(C.YELLOW('[Veg]Writing article url...'), end='', flush=True)
         
         #get target  that contains article url
         body_html = _TheVerge.body_html_path.read_text(encoding='utf-8')
@@ -91,7 +92,10 @@ class _TheVerge:
                     a = tag.find('a')#type: ignore
                     title = a.text.strip()#type: ignore
                     url = url_head + a['href']#type: ignore
-                    result_list.append({title: url})
+                    pub_date = tag.find('time')['datetime'].strip()#type: ignore
+                    pub_date = re.sub(r'(\d{4}-)(\d\d)(-)(\d\d)(.*)', r'\2.\4', pub_date)#type: ignore
+                    
+                    result_list.append({f'[{pub_date}] {title}': url})
                 except Exception: continue
         
         #body2
@@ -99,15 +103,18 @@ class _TheVerge:
             try:
                 
                 if tag.has_attr('role'): continue#type: ignore
-                title_url_dict = {tag.a.text.strip(): url_head + tag.a['href']}#type: ignore
-                result_list.append(title_url_dict)
+                title = tag.a.text.strip()#type: ignore
+                url =  url_head + tag.a['href']#type: ignore
+                pub_date = tag.find('time')['datetime'].strip()#type: ignore
+                pub_date = re.sub(r'(\d{4}-)(\d\d)(-)(\d\d)(.*)', r'\2.\4', pub_date)#type: ignore
+                
+                result_list.append({f'[{pub_date}] {title}': url})
             
             except Exception as e:
                 print(C.RED(f'[!Veg]Url error: {e}'))
                 continue
         
         #write in title_url_dict
-        print(C.YELLOW('[Veg]Writing article url...'), end='', flush=True)
         f = open(str(_TheVerge.article_url_path), 'w', encoding='utf-8')
         
         for title_url_dict in result_list:#type: ignore
@@ -126,22 +133,19 @@ class _TheVerge:
     def cls_output_article(cls, title_url_dict: dict[str, str]):
         print(C.YELLOW('[Veg]Getting reaponse and writing article...'), end='', flush=True)
         
+        #get info
         url = next(iter(title_url_dict.values()))
-        title = next(iter(title_url_dict))
+        origin_title = next(iter(title_url_dict))
+        title = re.sub(r'(\[.+?\] )(.+)', r'\2', origin_title)
+        pub_date = re.sub(r'(\[)(.+?)(\].+)', r'\2', origin_title)
         title_prefix = title[:35]
         
-        #get publish date and tags that contain article text
+        #get article
         response = requests.get(url, headers=_TheVerge.headers)
         article_tag = BeautifulSoup(response.text, 'html.parser').article
         for useless_tag in article_tag.find_all(['ul', 'aside']):#type: ignore
             if useless_tag.name == 'ul' and 'duet--article--unordered-list' in useless_tag.get('class'): continue#type: ignore
             useless_tag.extract()
-        try:
-            pub_date = article_tag.div.find('time')['datetime']#type: ignore
-            pub_date = re.sub(r'(\d{4}-)(\d\d)(-)(\d\d)(.*)', r'\2.\4', pub_date)#type: ignore
-        except Exception as e:
-            print(C.RED(f'\n[!Veg]Raise error while getting publish date: {e}'))
-            return False
         
         #title of article
         try:
@@ -165,7 +169,7 @@ class _TheVerge:
             
             para = tag.get_text(separator=' ', strip=True) + '\n'
             article = article + para
-        article = article + '---\nPublished by The Verge'
+        article = article + '\n\n——Published by TheVerge'
         
         #write in article
         output_path = _TheVerge.output_path / pub_date / f'{title_prefix}….txt'
@@ -215,6 +219,7 @@ class _TheVerge:
 
 
 if __name__ == '__main__':
-    d = {"2025 is turning into a good year for long-awaited games": "https://www.theverge.com/games/763698/delayed-games-silksong-metroid-prime-4-2025"}
+    d = {"[09.13] 2025 is turning into a good year for long-awaited games": "https://www.theverge.com/games/763698/delayed-games-silksong-metroid-prime-4-2025"}
     d2 = {"Microsoft\u2019s Xbox handheld is a good first step toward a Windows gaming OS": "https://www.theverge.com/notepad-microsoft-newsletter/763357/microsoft-asus-xbox-ally-handheld-hands-on-notepad"}
 
+    _TheVerge.cls_output_article(d)

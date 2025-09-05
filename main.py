@@ -27,6 +27,7 @@ from websites._GameDeveloper import _GameDeveloper
 from websites._PureXbox import _PureXbox
 from websites._GameRant import _GameRant
 from websites._EuroGamer import _EuroGamer
+from websites._TrueAchievements import _TrueAchievements
 
 #type hints
 from abc import ABC
@@ -73,7 +74,7 @@ class Basic(ClassProtocol):
     @staticmethod
     def write_cache():
         with open(str(Basic.cache_path), 'w', encoding='utf-8') as f:
-            json.dump(list(Basic.cache)[:30], f)
+            json.dump(list(Basic.cache)[:60], f)
 
 
 
@@ -154,7 +155,7 @@ class Basic(ClassProtocol):
             print(C.RED('[!]') + 'Index not found.')
             return False
         salt = random.randint(32768, 65536)
-        key = '<your key here>'
+        key = ''
         sign_str = appid + q + str(salt) + key
         sign = md5(sign_str.encode(encoding='utf-8')).hexdigest()
         params = {'q': q, 'from': 'en', 'to': 'zh', 'appid': appid, 'salt': salt, 'sign': sign, 'needIntervene': 1}
@@ -221,6 +222,10 @@ class EuroGamer(WebSiteAbc, _EuroGamer, Basic):
     alias = 'Ero'
     show_amount = 12
 
+class TrueAchievements(WebSiteAbc, _TrueAchievements, Basic):
+    alias = 'TA'
+    show_amount = 10
+
 
 
 class CommandLineInterface(Basic):
@@ -236,11 +241,13 @@ class CommandLineInterface(Basic):
                 'out': CommandLineInterface.out
                 }
         self.group = {
-                'h': [GameSpot, InsiderGaming, GamesRadar, PureXbox, GameRant],
-                'm': [VGC, TheVerge, GameDeveloper, WindowsCentral, Mp1st, EuroGamer],
-                'l': [AlineaAnalytics]
+                'h': [GameSpot, InsiderGaming, GamesRadar, GameRant, EuroGamer],
+                'm': [Mp1st, PureXbox],
+                'l': [WindowsCentral, VGC, TheVerge, GameDeveloper],
+                'b': [TrueAchievements],
+                'o': [AlineaAnalytics]
                 }
-        self.websites_list = self.group['h'] + self.group['m'] + self.group['l']
+        self.websites_list = self.group['h'] + self.group['m'] + self.group['l'] + self.group['b'] + self.group['o']
         self.prompts = {'pro': 'pro', 'rel': 'relaxe_pro', 'sho': 'short'}
 
 
@@ -265,9 +272,7 @@ class CommandLineInterface(Basic):
         #optional 1 param
         try: group = params[0]
         except IndexError: group = None
-        
-        with open(str(Basic.cache_path), 'w', encoding='utf-8') as f:
-            json.dump(list(self.__class__.cache)[:20], f)
+        Basic.write_cache()
         
         #-group
         if group:
@@ -396,9 +401,9 @@ class CommandLineInterface(Basic):
             return False
 
 
-
     def out(self, params:list):
         return
+    
 
 
 
@@ -442,7 +447,8 @@ class CommandLineInterface(Basic):
                 
                 print(C.RED('[!]') + 'Raise unexcepted error!')
                 print(f'Error type: {exc_type.__name__}({exc_value})')#type: ignore
-                print(f"Error path: '{file_name}', line number: {line_number}")
+                print(f"Error path: '{file_name}'")
+                print(f'line number: {line_number}')
                 print(f'Function name: {function_name}')
                 
                 _input = input('Insert n/any to continue/quit ' + C.RED('❯'))
