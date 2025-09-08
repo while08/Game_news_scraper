@@ -28,6 +28,7 @@ from websites._PureXbox import _PureXbox
 from websites._GameRant import _GameRant
 from websites._EuroGamer import _EuroGamer
 from websites._TrueAchievements import _TrueAchievements
+from websites._GamesIndustry import _GamesIndustry
 
 #type hints
 from abc import ABC
@@ -69,23 +70,18 @@ class Basic(ClassProtocol):
             json.dump([], f)
     
     with open(str(cache_path), 'r', encoding='utf-8') as f:
-        cache = set(json.load(f))
+        cache = json.load(f)
 
     @staticmethod
     def write_cache():
         with open(str(Basic.cache_path), 'w', encoding='utf-8') as f:
-            json.dump(list(Basic.cache)[:60], f)
+            json.dump(Basic.cache[-60:], f)
 
 
 
 
     @classmethod
     def show_articles(cls, update=False, read=True, append=False, show_all=False, show=True):
-        """    Require class attribute
-        cls.article_url_path: Path | Point to project database direction.
-        cls.show_amount: int | Decide show amount of artiles
-    Result
-        Pass particular website's article_url to 'current_article_list', for future selection operates."""
         
         if update:
             cls.get_write_body()
@@ -226,6 +222,10 @@ class TrueAchievements(WebSiteAbc, _TrueAchievements, Basic):
     alias = 'TA'
     show_amount = 10
 
+class GamesIndustry(WebSiteAbc, _GamesIndustry, Basic):
+    alias = 'GI'
+    show_amount = 8
+
 
 
 class CommandLineInterface(Basic):
@@ -241,9 +241,9 @@ class CommandLineInterface(Basic):
                 'out': CommandLineInterface.out
                 }
         self.group = {
-                'h': [GameSpot, InsiderGaming, GamesRadar, GameRant, EuroGamer],
-                'm': [Mp1st, PureXbox],
-                'l': [WindowsCentral, VGC, TheVerge, GameDeveloper],
+                'h': [GameSpot, InsiderGaming, GamesRadar, GameRant],
+                'm': [Mp1st, PureXbox, EuroGamer],
+                'l': [WindowsCentral, VGC, TheVerge, GameDeveloper, GamesIndustry],
                 'b': [TrueAchievements],
                 'o': [AlineaAnalytics]
                 }
@@ -389,7 +389,7 @@ class CommandLineInterface(Basic):
         #-index
         if re.fullmatch(r'\d+', flag):
             cache_url = next(iter(Basic.current_article_list[int(flag) - 1].values()))
-            Basic.cache.add(cache_url)
+            Basic.cache.append(cache_url)
             Basic.write_cache()
             
             article: str = Basic.output_article(int(flag))#type: ignore

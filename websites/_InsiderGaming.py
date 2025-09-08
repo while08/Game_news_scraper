@@ -18,8 +18,8 @@ class _InsiderGaming:
     article_url_path = body_html_path.parent / 'article_url.jsonl'
     output_path = Path().home() / 'storage/shared/ArticleOutput/InsiderGaming'
     
-    body_html_path.parent.mkdir(parents = True, exist_ok = True)
-    output_path.mkdir(parents = True, exist_ok = True)
+    body_html_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.mkdir(parents=True, exist_ok=True)
     
     url = 'https://insider-gaming.com/news-sitemap.xml'
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'}
@@ -92,7 +92,7 @@ class _InsiderGaming:
                     article = article + '-' + li.get_text(separator=' ', strip=True) + '\n'
             
             article = article + tag.get_text(separator=' ', strip=True) + '\n'
-        article = article + '\n---Published by Insider Gaming'
+        article = article + '\n——Published by InsiderGaming'
         
         #write in article
         output_path = _InsiderGaming.output_path / pub_date / f'{title_prefix}….txt'
